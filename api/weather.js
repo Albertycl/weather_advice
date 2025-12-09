@@ -105,11 +105,11 @@ export default async function handler(req, res) {
         const weatherJson = await weatherRes.json();
 
         if (weatherJson.daily && weatherJson.daily.time && weatherJson.daily.time.length > 0) {
-           const minTemp = weatherJson.daily.temperature_2m_min[0];
-           const maxTemp = weatherJson.daily.temperature_2m_max[0];
+           const minTemp = Math.round(weatherJson.daily.temperature_2m_min[0]);
+           const maxTemp = Math.round(weatherJson.daily.temperature_2m_max[0]);
            const weatherCode = weatherJson.daily.weather_code[0];
            const condition = getWeatherDescription(weatherCode);
-           const avgTemp = (minTemp + maxTemp) / 2;
+           const avgTemp = Math.round((minTemp + maxTemp) / 2);
 
            // Determine Scenario
            let scenario = "COMFORTABLE"; // Default string enum match
@@ -164,7 +164,7 @@ export default async function handler(req, res) {
       const minTemp = minMatch ? parseInt(minMatch[1]) : 10;
       const maxTemp = maxMatch ? parseInt(maxMatch[1]) : 20;
       const condition = condMatch ? condMatch[1].trim() : "晴時多雲";
-      const avgTemp = (minTemp + maxTemp) / 2;
+      const avgTemp = Math.round((minTemp + maxTemp) / 2);
 
       let scenario = "COMFORTABLE";
       if (avgTemp < 5) scenario = "COLD";
