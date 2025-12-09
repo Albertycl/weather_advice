@@ -58,12 +58,41 @@ export default async function handler(req, res) {
     let weatherData = null;
     let source = 'Open-Meteo';
 
+    // Map Traditional Chinese city names to English for better geocoding
+    const cityNameMap = {
+      '首爾': 'Seoul',
+      '釜山': 'Busan',
+      '濟州': 'Jeju',
+      '濟州島': 'Jeju',
+      '大邱': 'Daegu',
+      '仁川': 'Incheon',
+      '光州': 'Gwangju',
+      '大田': 'Daejeon',
+      '蔚山': 'Ulsan',
+      '東京': 'Tokyo',
+      '大阪': 'Osaka',
+      '京都': 'Kyoto',
+      '北京': 'Beijing',
+      '上海': 'Shanghai',
+      '台北': 'Taipei',
+      '香港': 'Hong Kong',
+      '新加坡': 'Singapore',
+      '曼谷': 'Bangkok',
+      '巴黎': 'Paris',
+      '倫敦': 'London',
+      '紐約': 'New York',
+      '洛杉磯': 'Los Angeles'
+    };
+
+    // Try to map the city name to English
+    const mappedCity = cityNameMap[targetCity] || targetCity;
+
     // 1. Try Open-Meteo First
     try {
-      console.log(`Attempting Open-Meteo for ${targetCity} on ${targetDate}`);
+      console.log(`Attempting Open-Meteo for ${mappedCity} (original: ${targetCity}) on ${targetDate}`);
       
       // Geocoding
-      const geoUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(targetCity)}&format=json&limit=1`;
+      const geoUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(mappedCity)}&format=json&limit=1`;
       const geoRes = await fetch(geoUrl, { headers: { 'User-Agent': 'WeatherAdviceApp/1.0' } });
       const geoData = await geoRes.json();
 
