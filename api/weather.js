@@ -107,7 +107,7 @@ export default async function handler(req, res) {
     if (!weatherData) {
       console.log("Falling back to Gemini...");
       source = 'Gemini';
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const ai = new GoogleGenAI(process.env.GEMINI_API_KEY);
       const geminiPrompt = `
         請幫我查詢 ${targetCity} 在 ${targetDate} 的天氣預報或歷史天氣數據。
         我需要當天的：
