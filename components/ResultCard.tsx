@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { GenerationResult } from '../types';
-import { CloudSun, Thermometer, Wind, RefreshCw, Calendar, Shirt, Sparkles, PenTool, Sun } from 'lucide-react';
+import { CloudSun, Thermometer, Wind, RefreshCw, Calendar, Shirt, Sparkles, PenTool, Sun, ExternalLink } from 'lucide-react';
 
 interface ResultCardProps {
   result: GenerationResult;
@@ -35,7 +35,7 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onReset, selectedDate, 
         </div>
         <div className="bg-white p-6 rounded-2xl rounded-tl-none shadow-lg border border-stone-100 relative flex-1">
            <h3 className="text-amber-800 font-bold mb-1 text-sm uppercase tracking-wider">Sunny 桑尼 說：</h3>
-           <p className="text-stone-700 text-lg leading-relaxed serif-font">
+           <p className="text-stone-700 text-lg leading-relaxed">
              {result.recommendation.message}
            </p>
         </div>
@@ -48,7 +48,7 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onReset, selectedDate, 
           <div>
             {/* Header: Date and City */}
             <div className="mb-6 border-b border-stone-200/50 pb-4">
-              <h2 className="text-2xl font-bold text-stone-800 serif-font mb-2">{cityName}</h2>
+              <h2 className="text-2xl font-bold text-stone-800 mb-2">{cityName}</h2>
               <div className="flex items-center gap-2 text-stone-500">
                 <Calendar size={18} className="text-amber-500"/>
                 <span className="font-medium tracking-wide">{formatDate(selectedDate)}</span>
@@ -60,18 +60,32 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onReset, selectedDate, 
               <span className="font-medium tracking-wide text-xs uppercase">天氣預報</span>
             </div>
             
-            <div className="text-center py-4">
-              <span className="text-8xl font-bold text-stone-800 serif-font tracking-tighter">
-                {result.weather.temperature}°
-              </span>
-              <p className="text-xl text-stone-500 mt-2 font-medium">{result.weather.condition}</p>
+            {/* Temperature Block */}
+            <div className="py-4 flex items-center justify-center gap-8">
+              <div className="flex flex-col items-center w-24">
+                <span className="text-stone-400 text-xs uppercase tracking-wider mb-2 font-medium">最低 Low</span>
+                <span className="text-5xl font-bold text-stone-800 tracking-tight">
+                  {result.weather.minTemp}°
+                </span>
+              </div>
+              
+              <div className="h-16 w-px bg-stone-200 rotate-12 mx-2"></div>
+              
+              <div className="flex flex-col items-center w-24">
+                <span className="text-stone-400 text-xs uppercase tracking-wider mb-2 font-medium">最高 High</span>
+                <span className="text-5xl font-bold text-stone-800 tracking-tight">
+                  {result.weather.maxTemp}°
+                </span>
+              </div>
             </div>
+            
+            <p className="text-xl text-stone-500 mt-4 font-medium text-center">{result.weather.condition}</p>
 
             <div className="grid grid-cols-2 gap-4 mt-8">
               <div className="bg-white p-4 rounded-2xl border border-stone-100 flex flex-col items-center shadow-sm">
                 <Thermometer className="text-amber-500 mb-2" size={20}/>
-                <span className="text-stone-400 text-xs uppercase">體感溫度</span>
-                <span className="text-stone-700 font-bold">{result.weather.temperature - 2}°</span>
+                <span className="text-stone-400 text-xs uppercase">平均體感</span>
+                <span className="text-stone-700 font-bold">{Math.round(result.weather.avgTemp - 2)}°</span>
               </div>
                <div className="bg-white p-4 rounded-2xl border border-stone-100 flex flex-col items-center shadow-sm">
                 <Wind className="text-blue-400 mb-2" size={20}/>
@@ -79,6 +93,28 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onReset, selectedDate, 
                 <span className="text-stone-700 font-bold">微風</span>
               </div>
             </div>
+
+            {/* Grounding Sources */}
+            {result.weather.sources && result.weather.sources.length > 0 && (
+              <div className="mt-8 pt-4 border-t border-stone-100">
+                <p className="text-stone-400 text-[10px] uppercase mb-2">資料來源</p>
+                <div className="flex flex-wrap gap-2">
+                  {result.weather.sources.slice(0, 3).map((source, index) => (
+                    <a 
+                      key={index} 
+                      href={source.uri} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-[10px] text-stone-500 hover:text-amber-600 bg-white border border-stone-200 rounded-full px-2 py-1 transition-colors truncate max-w-[150px]"
+                    >
+                      <ExternalLink size={10} />
+                      <span className="truncate">{source.title}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
 
@@ -92,7 +128,7 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onReset, selectedDate, 
                    <div className="p-2 bg-amber-50 rounded-lg text-amber-600">
                       <Shirt size={20} />
                    </div>
-                   <h4 className="font-bold text-stone-800 text-lg serif-font">{result.recommendation.label}</h4>
+                   <h4 className="font-bold text-stone-800 text-lg">{result.recommendation.label}</h4>
                 </div>
                 <Sparkles size={16} className="text-amber-300" />
               </div>
@@ -116,7 +152,7 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onReset, selectedDate, 
                      <PenTool size={12} />
                      <span className="uppercase tracking-widest">穿搭筆記</span>
                   </div>
-                  <div className="font-handwriting text-amber-600 font-bold text-lg flex items-center gap-1 serif-font">
+                  <div className="text-amber-600 font-bold text-lg flex items-center gap-1">
                      Sunny 桑尼 ✨
                   </div>
                 </div>

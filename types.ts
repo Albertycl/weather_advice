@@ -11,20 +11,27 @@ export enum WeatherScenario {
   WARM = 'WARM'        // > 22°C
 }
 
+export interface WeatherSource {
+  title: string;
+  uri: string;
+}
+
 export interface WeatherData {
-  temperature: number;
+  minTemp: number;
+  maxTemp: number;
+  avgTemp: number;
   condition: string;
   scenario: WeatherScenario;
+  sources?: WeatherSource[];
 }
 
 export interface OutfitRecommendation {
   message: string;
   label: string;
-  outfitDetails: string; // Changed from imagePrompt to outfitDetails
+  outfitDetails: string;
 }
 
 export interface GenerationResult {
   weather: WeatherData;
   recommendation: OutfitRecommendation;
-  // imageUrl removed
 }

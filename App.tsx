@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import { City, WeatherScenario, WeatherData, OutfitRecommendation, GenerationResult } from './types';
+import { City, WeatherScenario, OutfitRecommendation, GenerationResult } from './types';
 import SelectionForm from './components/SelectionForm';
 import ResultCard from './components/ResultCard';
+import { fetchWeatherWithGemini } from './services/geminiService';
 
 const App: React.FC = () => {
   const [city, setCity] = useState<City>(City.SEOUL);
@@ -17,68 +18,6 @@ const App: React.FC = () => {
       case City.JEJU: return '濟州島';
       default: return c;
     }
-  };
-
-  // Helper to simulate weather based on City + Date
-  const calculateWeather = (selectedCity: City, selectedDate: string): WeatherData => {
-    const month = new Date(selectedDate).getMonth() + 1; // 1-12
-    
-    // Baseline Temperature (Approximate Seoul Temp)
-    let baseTemp = 0;
-    if (month >= 12 || month <= 2) baseTemp = -4; // Winter
-    else if (month >= 3 && month <= 4) baseTemp = 10; // Spring
-    else if (month === 10 || month === 11) baseTemp = 11; // Autumn
-    else if (month >= 5 && month <= 6 || month === 9) baseTemp = 22; // Early Summer/Late Summer
-    else baseTemp = 29; // Peak Summer
-
-    // City Adjustments
-    let cityAdjustment = 0;
-    let condition = "晴朗 Clear";
-
-    // Random fluctuation (-2 to +2)
-    const randomVar = Math.floor(Math.random() * 5) - 2;
-
-    switch(selectedCity) {
-      case City.BUSAN:
-        // Busan is warmer in winter, milder in summer due to coast
-        cityAdjustment = (month >= 12 || month <= 2) ? 4 : 1; 
-        if (baseTemp > 25) cityAdjustment = -1; // Sea breeze cools down summer
-        break;
-      case City.JEJU:
-        // Jeju is significantly warmer in winter
-        cityAdjustment = (month >= 12 || month <= 2) ? 7 : 2;
-        if (baseTemp > 25) cityAdjustment = -2;
-        condition = "多風 Windy"; // Jeju is famous for wind
-        break;
-      case City.SEOUL:
-      default:
-        cityAdjustment = 0;
-        break;
-    }
-
-    const finalTemp = baseTemp + cityAdjustment + randomVar;
-
-    // Determine Scenario
-    let scenario = WeatherScenario.COMFORTABLE;
-    if (finalTemp < 5) scenario = WeatherScenario.COLD;
-    else if (finalTemp >= 5 && finalTemp < 15) scenario = WeatherScenario.COOL;
-    else if (finalTemp >= 15 && finalTemp < 22) scenario = WeatherScenario.COMFORTABLE;
-    else scenario = WeatherScenario.WARM;
-
-    // Refine Condition Text
-    if (selectedCity === City.JEJU && condition === "多風 Windy") {
-      if (scenario === WeatherScenario.COLD) condition = "寒風刺骨 Windy & Cold";
-      else if (scenario === WeatherScenario.WARM) condition = "海風輕拂 Ocean Breeze";
-      else condition = "多風 Breezy";
-    } else {
-       // Standard conditions for other cities
-       if (scenario === WeatherScenario.COLD) condition = randomVar > 0 ? "乾冷 Dry Cold" : "多雲 Cloudy";
-       else if (scenario === WeatherScenario.COOL) condition = "晴時多雲 Partly Cloudy";
-       else if (scenario === WeatherScenario.WARM) condition = "陽光普照 Sunny";
-       else condition = "舒適 Comfortable";
-    }
-
-    return { temperature: finalTemp, condition, scenario };
   };
 
   const getRecommendation = (targetCity: City, scenario: WeatherScenario): OutfitRecommendation => {
@@ -143,25 +82,24 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
 
-    // Simulate a short delay to feel like "Processing"
-    setTimeout(() => {
-      try {
-        // 1. Calculate Logic with specific City
-        const weather = calculateWeather(city, date);
-        const recommendation = getRecommendation(city, weather.scenario);
+    try {
+      // Use Gemini Service to fetch real weather data
+      const cityNameCN = getCityNameCN(city);
+      const weather = await fetchWeatherWithGemini(cityNameCN, date);
+      
+      const recommendation = getRecommendation(city, weather.scenario);
 
-        setResult({
-          weather,
-          recommendation,
-        });
+      setResult({
+        weather,
+        recommendation,
+      });
 
-      } catch (err) {
-        console.error(err);
-        setError("哎呀！Sunny 桑尼 正在休息，請稍後再試試看！✨");
-      } finally {
-        setIsLoading(false);
-      }
-    }, 800);
+    } catch (err) {
+      console.error(err);
+      setError("哎呀！Sunny 桑尼 正在休息，請稍後再試試看！✨");
+    } finally {
+      setIsLoading(false);
+    }
   }, [date, city]);
 
   const handleReset = () => {
@@ -178,7 +116,7 @@ const App: React.FC = () => {
       </div>
 
       <header className="relative pt-12 pb-6 px-6 text-center z-10">
-        <h1 className="text-4xl md:text-5xl font-bold text-stone-900 mb-2 tracking-tight serif-font">
+        <h1 className="text-4xl md:text-5xl font-bold text-stone-900 mb-2 tracking-tight">
           韓國導遊領隊桑尼Sunny <span className="text-amber-500 text-3xl block mt-2 md:inline md:mt-0 md:text-5xl">穿搭小幫手</span>
         </h1>
         <p className="text-stone-500 font-medium tracking-widest text-xs uppercase">

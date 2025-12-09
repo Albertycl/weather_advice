@@ -25,7 +25,7 @@ const SelectionForm: React.FC<SelectionFormProps> = ({
         <span className="inline-block p-3 rounded-full bg-amber-100 text-amber-600 mb-3">
           <MapPin size={24} />
         </span>
-        <h2 className="text-2xl font-bold text-stone-800 serif-font">開始您的旅程</h2>
+        <h2 className="text-2xl font-bold text-stone-800">開始您的旅程</h2>
         <p className="text-stone-500 mt-2 text-sm">請告訴 Sunny 桑尼 您想去哪裡？</p>
       </div>
 
