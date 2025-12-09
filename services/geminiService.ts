@@ -1,14 +1,15 @@
 import { GoogleGenAI } from "@google/genai";
 import { WeatherData, WeatherScenario, WeatherSource } from "../types";
 
-// Initialize Gemini Client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 /**
  * Fetches real weather data using Gemini with Google Search Grounding.
  */
 export const fetchWeatherWithGemini = async (city: string, date: string): Promise<WeatherData> => {
   try {
+    // Initialize the client strictly within the function scope
+    // This prevents "An API Key must be set" errors during module loading if env vars aren't ready immediately
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
     const prompt = `
       請幫我查詢 ${city} 在 ${date} 的天氣預報或歷史天氣數據。
       我需要當天的：
