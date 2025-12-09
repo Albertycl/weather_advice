@@ -4,7 +4,6 @@ export default async function handler(req, res) {
   // CORS
   const allowedOrigins = [
     '*.vercel.app',
-    'http://10.7.6.186:5426',
     'http://localhost:5426'
   ];
 
