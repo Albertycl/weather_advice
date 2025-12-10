@@ -7,10 +7,14 @@ import { WeatherData, WeatherScenario, WeatherSource } from "../types";
  */
 export const fetchWeatherWithGemini = async (city: string, date: string): Promise<WeatherData> => {
   try {
-    const apiKey = process.env.API_KEY;
+    // 支援兩種環境變數讀取方式：
+    // 1. process.env.API_KEY (Node.js / AI Studio 環境)
+    // 2. import.meta.env.VITE_API_KEY (Vite / GitHub Pages 環境)
+    const apiKey = process.env.API_KEY || (import.meta as any).env?.VITE_API_KEY;
     
     if (!apiKey) {
-      console.error("❌ 找不到 API Key！請確認您的專案根目錄下是否有 '.env' 檔案，並且內容包含 'API_KEY=您的金鑰'。");
+      console.error("❌ 找不到 API Key！請確認您的 .env 檔案內容。");
+      console.error("若是使用 Vite/GitHub Pages，請確認變數名稱為 'VITE_API_KEY'。");
       throw new Error("API Key is missing. Please check your .env file.");
     }
 
