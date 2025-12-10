@@ -116,7 +116,10 @@ const App: React.FC = () => {
       </div>
 
       <header className="relative pt-12 pb-6 px-6 text-center z-10">
-        <h1 className="text-4xl md:text-5xl font-bold text-stone-900 mb-2 tracking-tight">
+        <h1 
+          onClick={handleReset} 
+          className="text-4xl md:text-5xl font-bold text-stone-900 mb-2 tracking-tight cursor-pointer hover:opacity-80 transition-opacity select-none"
+        >
           韓國導遊領隊桑尼Sunny <span className="text-amber-500 text-3xl block mt-2 md:inline md:mt-0 md:text-5xl">穿搭小幫手</span>
         </h1>
         <p className="text-stone-500 font-medium tracking-widest text-xs uppercase">

@@ -1,50 +1,81 @@
+import { GoogleGenAI } from "@google/genai";
 import { WeatherData, WeatherScenario, WeatherSource } from "../types";
 
 /**
- * Fetches real weather data by calling the secure backend API.
- * This ensures the API key remains hidden and works on Vercel deployments.
+ * Fetches real weather data using the Google GenAI SDK directly from the client.
+ * Suitable for self-hosted environments where a backend proxy is not used.
  */
 export const fetchWeatherWithGemini = async (city: string, date: string): Promise<WeatherData> => {
   try {
-    const prompt = `
-      請幫我查詢 ${city} 在 ${date} 的天氣預報或歷史天氣數據。
-      我需要當天的：
-      1. 最低氣溫 (攝氏)
-      2. 最高氣溫 (攝氏)
-      3. 天氣狀況簡述 (例如：晴朗、多雲、下雨、有雪) - 請用繁體中文回答。
-
-      請根據搜尋結果，嚴格依照以下格式回傳，方便程式解析 (請只回傳這三行資料，不要有其他引言)：
-      MIN: [最低溫數字]
-      MAX: [最高溫數字]
-      COND: [天氣狀況簡述]
-    `;
-
-    // Call the Vercel Serverless Function
-    const response = await fetch('/api/weather', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ prompt })
-    });
-
-    if (!response.ok) {
-      throw new Error(`API call failed: ${response.statusText}`);
+    const apiKey = process.env.API_KEY;
+    
+    if (!apiKey) {
+      console.error("❌ 找不到 API Key！請確認您的專案根目錄下是否有 '.env' 檔案，並且內容包含 'API_KEY=您的金鑰'。");
+      throw new Error("API Key is missing. Please check your .env file.");
     }
 
-    const data = await response.json();
-    const text = data.text || "";
+    // Initialize the Gemini client with the API key from environment variables.
+    const ai = new GoogleGenAI({ apiKey });
+
+    // 更精確的 Prompt 工程，區分「短期預報」與「歷史平均」
+    const prompt = `
+      Action: Use Google Search to find the weather for ${city} on ${date}.
+      
+      Instructions:
+      1. If the date is within the next 10 days, find the specific weather forecast numbers.
+      2. If the date is far in the future (more than 10 days), find the "historical average temperature" for ${city} in that month.
+      3. Extract the Maximum Temperature (Highest) and Minimum Temperature (Lowest) in Celsius.
+      4. Summarize the condition (e.g., Sunny, Cloudy, Snow) in Traditional Chinese. If using historical data, append "(歷史平均)" to the condition.
+
+      Output Format (Strictly follow this):
+      MIN: <number>
+      MAX: <number>
+      COND: <text>
+      
+      Example:
+      MIN: -5
+      MAX: 3
+      COND: 多雲時陰
+    `;
+
+    // Call Google Gemini 2.5 Flash directly
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        tools: [{ googleSearch: {} }], // Enable Google Search Grounding for real-time weather
+      }
+    });
+
+    const text = response.text || "";
     console.log("Gemini Weather Response:", text);
 
-    // Parse the response using Regex
-    const minMatch = text.match(/MIN:\s*(-?\d+)/i);
-    const maxMatch = text.match(/MAX:\s*(-?\d+)/i);
+    // Parse the response using more flexible Regex
+    const minMatch = text.match(/MIN:\s*([-\d]+)/i);
+    const maxMatch = text.match(/MAX:\s*([-\d]+)/i);
     const condMatch = text.match(/COND:\s*(.+)/i);
 
-    // Fallback values if parsing fails
-    const minTemp = minMatch ? parseInt(minMatch[1]) : 0;
-    const maxTemp = maxMatch ? parseInt(maxMatch[1]) : 10;
-    const condition = condMatch ? condMatch[1].trim() : "晴時多雲";
+    let minTemp = minMatch ? parseInt(minMatch[1], 10) : null;
+    let maxTemp = maxMatch ? parseInt(maxMatch[1], 10) : null;
+    let condition = condMatch ? condMatch[1].trim() : "晴時多雲";
+
+    // Smart Fallback based on Month if parsing fails completely
+    // This avoids showing "0-10" for every error case which looks fake.
+    if (minTemp === null || maxTemp === null) {
+        console.warn("Weather parsing failed, using seasonal fallback.");
+        const month = new Date(date).getMonth() + 1;
+        
+        // Simple seasonal estimation for Korea (Seoul base)
+        if (month >= 12 || month <= 2) { // Winter
+            minTemp = -8; maxTemp = 2; condition = "寒冷 (季節估算)";
+        } else if (month >= 3 && month <= 5) { // Spring
+            minTemp = 8; maxTemp = 18; condition = "涼爽 (季節估算)";
+        } else if (month >= 6 && month <= 8) { // Summer
+            minTemp = 22; maxTemp = 30; condition = "炎熱 (季節估算)";
+        } else { // Autumn
+            minTemp = 10; maxTemp = 20; condition = "舒適 (季節估算)";
+        }
+    }
     
     const avgTemp = (minTemp + maxTemp) / 2;
 
@@ -56,13 +87,12 @@ export const fetchWeatherWithGemini = async (city: string, date: string): Promis
     else scenario = WeatherScenario.WARM;
 
     // Extract Grounding Sources
-    // The API returns groundingMetadata directly
     const sources: WeatherSource[] = [];
-    if (data.groundingMetadata?.groundingChunks) {
-      data.groundingMetadata.groundingChunks.forEach((chunk: any) => {
+    if (response.candidates?.[0]?.groundingMetadata?.groundingChunks) {
+      response.candidates[0].groundingMetadata.groundingChunks.forEach((chunk: any) => {
         if (chunk.web) {
           sources.push({
-            title: chunk.web.title || "天氣資料來源",
+            title: chunk.web.title || "Google Search 來源",
             uri: chunk.web.uri || "#"
           });
         }
@@ -78,7 +108,7 @@ export const fetchWeatherWithGemini = async (city: string, date: string): Promis
       minTemp: 10,
       maxTemp: 20,
       avgTemp: 15,
-      condition: "系統繁忙，請稍後再試",
+      condition: "系統繁忙",
       scenario: WeatherScenario.COMFORTABLE,
       sources: []
     };

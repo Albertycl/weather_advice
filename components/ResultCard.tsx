@@ -41,6 +41,17 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onReset, selectedDate, 
         </div>
       </div>
 
+      {/* Moved Reset Button - Placed prominently above the cards */}
+      <div className="flex justify-center mb-10">
+        <button 
+          onClick={onReset}
+          className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-white border border-stone-200 text-stone-600 font-medium hover:bg-stone-50 hover:text-amber-600 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+        >
+          <RefreshCw size={18} />
+          查詢其他日期或城市
+        </button>
+      </div>
+
       <div className="grid md:grid-cols-2 gap-6">
         
         {/* Left: Weather Info */}
@@ -58,6 +69,10 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onReset, selectedDate, 
             <div className="flex items-center gap-2 text-stone-400 mb-6">
               <CloudSun size={18} />
               <span className="font-medium tracking-wide text-xs uppercase">天氣預報</span>
+              {/* Display Condition Text */}
+              <span className="ml-auto text-stone-600 text-sm font-bold bg-white/50 px-2 py-1 rounded-md">
+                {result.weather.condition}
+              </span>
             </div>
             
             {/* Temperature Block */}
@@ -159,17 +174,6 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onReset, selectedDate, 
            </div>
         </div>
       </div>
-
-      <div className="mt-12 text-center">
-        <button 
-          onClick={onReset}
-          className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-white border border-stone-200 text-stone-600 font-medium hover:bg-stone-50 hover:text-amber-600 transition-colors shadow-sm"
-        >
-          <RefreshCw size={18} />
-          查詢其他日期或城市
-        </button>
-      </div>
-
     </div>
   );
 };
