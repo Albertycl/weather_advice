@@ -1,10 +1,10 @@
-import { fetchWeatherWithGemini } from "./geminiService";
+
 import { fetchWeatherWithOpenMeteo } from "./openMeteoService";
 import { WeatherData } from "../types";
 
 const CACHE_DURATION = 1000 * 60 * 60; // 1 Hour
 
-export const getWeather = async (city: string, date: string): Promise<WeatherData> => {
+export const getWeather = async (city: string, date: string): Promise<WeatherData | null> => {
     const cacheKey = `weather_${city}_${date}`;
 
     // 1. Check Cache
@@ -26,19 +26,14 @@ export const getWeather = async (city: string, date: string): Promise<WeatherDat
 
     let weatherData: WeatherData | null = null;
 
-    // 2. Try Open-Meteo first (Free, Fast)
+    // 2. Try Open-Meteo
     try {
         weatherData = await fetchWeatherWithOpenMeteo(city, date);
         if (!weatherData) {
-            console.warn("⚠️ Open-Meteo returned null, falling back to Gemini...");
+            console.warn("⚠️ Open-Meteo returned null.");
         }
     } catch (error) {
-        console.warn("⚠️ Open-Meteo failed, falling back to Gemini...", error);
-    }
-
-    // 3. Fallback to Gemini (Paid/Quota, AI-powered)
-    if (!weatherData) {
-        weatherData = await fetchWeatherWithGemini(city, date);
+        console.error("⚠️ Open-Meteo failed:", error);
     }
 
     // 4. Save to Cache

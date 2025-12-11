@@ -6,7 +6,8 @@ import { getWeather } from './services/weatherService';
 
 const App: React.FC = () => {
   const [city, setCity] = useState<City>(City.SEOUL);
-  const [date, setDate] = useState<string>('');
+  // Initialize with today's date
+  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [result, setResult] = useState<GenerationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -76,8 +77,11 @@ const App: React.FC = () => {
     }
   };
 
-  const handleGenerate = useCallback(async () => {
-    if (!date) return;
+  const handleGenerate = useCallback(async (targetDate?: string) => {
+    // If targetDate is an event (object) or empty, use current date state
+    const queryDate = (typeof targetDate === 'string' && targetDate) ? targetDate : date;
+    
+    if (!queryDate) return;
 
     setIsLoading(true);
     setError(null);
@@ -85,7 +89,11 @@ const App: React.FC = () => {
     try {
       // Use Weather Service (Open-Meteo -> Gemini Fallback)
       // Pass English city name for better Geocoding support in Open-Meteo
-      const weather = await getWeather(city, date);
+      const weather = await getWeather(city, queryDate);
+
+      if (!weather) {
+        throw new Error("無法取得天氣資訊，請稍後再試。");
+      }
 
       const recommendation = getRecommendation(city, weather.scenario);
 
@@ -102,9 +110,18 @@ const App: React.FC = () => {
     }
   }, [date, city]);
 
+  const handleDateChange = (days: number) => {
+    const currentDate = new Date(date);
+    currentDate.setDate(currentDate.getDate() + days);
+    const newDate = currentDate.toISOString().split('T')[0];
+    setDate(newDate);
+    handleGenerate(newDate);
+  };
+
   const handleReset = () => {
     setResult(null);
-    setDate('');
+    // Reset to today
+    setDate(new Date().toISOString().split('T')[0]);
   };
 
   return (
@@ -152,6 +169,7 @@ const App: React.FC = () => {
               onReset={handleReset}
               selectedDate={date}
               cityName={getCityNameCN(city)}
+              onDateChange={handleDateChange}
             />
           </div>
         )}

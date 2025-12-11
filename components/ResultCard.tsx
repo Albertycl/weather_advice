@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { GenerationResult } from '../types';
-import { CloudSun, Thermometer, Wind, RefreshCw, Calendar, Shirt, Sparkles, PenTool, Sun, ExternalLink } from 'lucide-react';
+import { CloudSun, Thermometer, Wind, RefreshCw, Calendar, Shirt, Sparkles, PenTool, Sun, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ResultCardProps {
   result: GenerationResult;
   onReset: () => void;
   selectedDate: string;
   cityName: string;
+  onDateChange: (days: number) => void;
 }
 
-const ResultCard: React.FC<ResultCardProps> = ({ result, onReset, selectedDate, cityName }) => {
+const ResultCard: React.FC<ResultCardProps> = ({ result, onReset, selectedDate, cityName, onDateChange }) => {
   const [showContent, setShowContent] = useState(false);
 
   useEffect(() => {
@@ -52,10 +53,39 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onReset, selectedDate, 
         </button>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 gap-6 relative">
+        {/* Navigation Arrows - Absolute positioned for desktop, or separate for mobile */}
+        <button
+          onClick={() => onDateChange(-1)}
+          className="absolute left-0 top-1/2 -translate-x-12 -translate-y-1/2 p-2 bg-white/80 hover:bg-white text-stone-400 hover:text-amber-500 rounded-full shadow-lg transition-all hidden md:block z-20"
+          title="前一天"
+        >
+          <ChevronLeft size={32} />
+        </button>
+        <button
+          onClick={() => onDateChange(1)}
+          className="absolute right-0 top-1/2 translate-x-12 -translate-y-1/2 p-2 bg-white/80 hover:bg-white text-stone-400 hover:text-amber-500 rounded-full shadow-lg transition-all hidden md:block z-20"
+          title="後一天"
+        >
+          <ChevronRight size={32} />
+        </button>
 
         {/* Left: Weather Info */}
-        <div className="bg-white/60 backdrop-blur-md rounded-3xl p-8 border border-white shadow-lg flex flex-col justify-between h-full">
+        <div className="bg-white/60 backdrop-blur-md rounded-3xl p-8 border border-white shadow-lg flex flex-col justify-between h-full relative group">
+          {/* Mobile Navigation Arrows (Inside card) */}
+          <button
+            onClick={() => onDateChange(-1)}
+            className="absolute left-2 top-1/2 -translate-y-1/2 p-1 text-stone-300 hover:text-amber-500 md:hidden"
+          >
+            <ChevronLeft size={24} />
+          </button>
+          <button
+            onClick={() => onDateChange(1)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-stone-300 hover:text-amber-500 md:hidden"
+          >
+            <ChevronRight size={24} />
+          </button>
+
           <div>
             {/* Header: Date and City */}
             <div className="mb-6 border-b border-stone-200/50 pb-4">

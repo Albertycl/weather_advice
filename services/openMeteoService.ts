@@ -31,12 +31,25 @@ function getWeatherCondition(code: number): string {
     return "多雲"; // Default
 }
 
+// City Name Mappings for better Geocoding results
+const CITY_MAPPINGS: Record<string, string> = {
+    "濟州島": "Jeju City",
+    "Jeju": "Jeju City",
+    "jeju": "Jeju City"
+};
+
 export const fetchWeatherWithOpenMeteo = async (city: string, date: string): Promise<WeatherData | null> => {
     try {
         console.log(`🌍 Fetching weather for ${city} from Open-Meteo...`);
 
         // 1. Geocoding
-        const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=zh&format=json`;
+        // Check for mapped city name
+        const searchCity = CITY_MAPPINGS[city] || city;
+        if (searchCity !== city) {
+            console.log(`🔄 Mapped '${city}' to '${searchCity}' for Geocoding.`);
+        }
+
+        const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(searchCity)}&count=1&language=zh&format=json`;
         console.log(`🔍 Geocoding URL: ${geoUrl}`);
         const geoRes = await fetch(geoUrl);
         const geoData: GeoResult = await geoRes.json();
@@ -68,7 +81,16 @@ export const fetchWeatherWithOpenMeteo = async (city: string, date: string): Pro
         // Let's try to find exact match.
 
         // Ensure date format matches YYYY-MM-DD
-        const targetDate = new Date(date).toISOString().split('T')[0];
+        if (!date) {
+            console.warn("⚠️ Date is empty.");
+            return null;
+        }
+        const dateObj = new Date(date);
+        if (isNaN(dateObj.getTime())) {
+            console.warn(`⚠️ Invalid date format: ${date}`);
+            return null;
+        }
+        const targetDate = dateObj.toISOString().split('T')[0];
         const index = weatherData.daily.time.findIndex((d: string) => d === targetDate);
 
         if (index === -1) {
