@@ -8,6 +8,7 @@ export default defineConfig({
   base: './',
   server: {
     host: true, // 監聽所有 IP 位址
+    port: 5072,
     // 允許特定的 Host 訪問開發伺服器，解決 "Blocked request" 錯誤
     allowedHosts: [
       'h3.gnt.tw',

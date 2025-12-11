@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { City, WeatherScenario, OutfitRecommendation, GenerationResult } from './types';
 import SelectionForm from './components/SelectionForm';
 import ResultCard from './components/ResultCard';
-import { fetchWeatherWithGemini } from './services/geminiService';
+import { getWeather } from './services/weatherService';
 
 const App: React.FC = () => {
   const [city, setCity] = useState<City>(City.SEOUL);
@@ -66,9 +66,9 @@ const App: React.FC = () => {
         };
       default:
         return {
-           message: `歡迎來到${cityName}！今天天氣不錯！`,
-           label: "日常穿搭",
-           outfitDetails: `建議穿著舒適的休閒服裝
+          message: `歡迎來到${cityName}！今天天氣不錯！`,
+          label: "日常穿搭",
+          outfitDetails: `建議穿著舒適的休閒服裝
 選擇透氣材質
 搭配好走的步行鞋
 方便活動為主`,
@@ -78,15 +78,15 @@ const App: React.FC = () => {
 
   const handleGenerate = useCallback(async () => {
     if (!date) return;
-    
+
     setIsLoading(true);
     setError(null);
 
     try {
-      // Use Gemini Service to fetch real weather data
-      const cityNameCN = getCityNameCN(city);
-      const weather = await fetchWeatherWithGemini(cityNameCN, date);
-      
+      // Use Weather Service (Open-Meteo -> Gemini Fallback)
+      // Pass English city name for better Geocoding support in Open-Meteo
+      const weather = await getWeather(city, date);
+
       const recommendation = getRecommendation(city, weather.scenario);
 
       setResult({
@@ -116,8 +116,8 @@ const App: React.FC = () => {
       </div>
 
       <header className="relative pt-12 pb-6 px-6 text-center z-10">
-        <h1 
-          onClick={handleReset} 
+        <h1
+          onClick={handleReset}
           className="text-4xl md:text-5xl font-bold text-stone-900 mb-2 tracking-tight cursor-pointer hover:opacity-80 transition-opacity select-none"
         >
           韓國導遊領隊桑尼Sunny <span className="text-amber-500 text-3xl block mt-2 md:inline md:mt-0 md:text-5xl">穿搭小幫手</span>
@@ -129,14 +129,14 @@ const App: React.FC = () => {
 
       <main className="relative z-10 px-4 md:px-8 max-w-6xl mx-auto">
         {error && (
-            <div className="max-w-md mx-auto mb-6 p-4 bg-red-50 text-red-800 rounded-xl border border-red-100 text-center text-sm">
-                {error}
-            </div>
+          <div className="max-w-md mx-auto mb-6 p-4 bg-red-50 text-red-800 rounded-xl border border-red-100 text-center text-sm">
+            {error}
+          </div>
         )}
 
         {!result ? (
           <div className="mt-8 md:mt-16">
-            <SelectionForm 
+            <SelectionForm
               selectedCity={city}
               setSelectedCity={setCity}
               selectedDate={date}
@@ -147,16 +147,16 @@ const App: React.FC = () => {
           </div>
         ) : (
           <div className="mt-8">
-            <ResultCard 
-              result={result} 
-              onReset={handleReset} 
+            <ResultCard
+              result={result}
+              onReset={handleReset}
               selectedDate={date}
               cityName={getCityNameCN(city)}
             />
           </div>
         )}
       </main>
-      
+
       <footer className="relative z-10 mt-20 text-center text-stone-400 text-xs py-8">
         <p>© 2025 韓國導遊領隊桑尼Sunny. All rights reserved.</p>
       </footer>

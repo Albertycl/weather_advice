@@ -23,6 +23,11 @@ export interface WeatherData {
   condition: string;
   scenario: WeatherScenario;
   sources?: WeatherSource[];
+  tokenUsage?: {
+    totalTokens: number;
+    promptTokens?: number;
+    candidatesTokens?: number;
+  };
 }
 
 export interface OutfitRecommendation {

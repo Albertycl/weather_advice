@@ -10,8 +10,8 @@ export const fetchWeatherWithGemini = async (city: string, date: string): Promis
     // 支援兩種環境變數讀取方式：
     // 1. process.env.API_KEY (Node.js / AI Studio 環境)
     // 2. import.meta.env.VITE_API_KEY (Vite / GitHub Pages 環境)
-    const apiKey = process.env.API_KEY || (import.meta as any).env?.VITE_API_KEY;
-    
+    const apiKey = (import.meta as any).env?.VITE_API_KEY || (typeof process !== "undefined" ? process.env.API_KEY : undefined);
+
     if (!apiKey) {
       console.error("❌ 找不到 API Key！請確認您的 .env 檔案內容。");
       console.error("若是使用 Vite/GitHub Pages，請確認變數名稱為 'VITE_API_KEY'。");
@@ -44,7 +44,7 @@ export const fetchWeatherWithGemini = async (city: string, date: string): Promis
 
     // Call Google Gemini 2.5 Flash directly
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash',
       contents: prompt,
       config: {
         tools: [{ googleSearch: {} }], // Enable Google Search Grounding for real-time weather
@@ -66,21 +66,21 @@ export const fetchWeatherWithGemini = async (city: string, date: string): Promis
     // Smart Fallback based on Month if parsing fails completely
     // This avoids showing "0-10" for every error case which looks fake.
     if (minTemp === null || maxTemp === null) {
-        console.warn("Weather parsing failed, using seasonal fallback.");
-        const month = new Date(date).getMonth() + 1;
-        
-        // Simple seasonal estimation for Korea (Seoul base)
-        if (month >= 12 || month <= 2) { // Winter
-            minTemp = -8; maxTemp = 2; condition = "寒冷 (季節估算)";
-        } else if (month >= 3 && month <= 5) { // Spring
-            minTemp = 8; maxTemp = 18; condition = "涼爽 (季節估算)";
-        } else if (month >= 6 && month <= 8) { // Summer
-            minTemp = 22; maxTemp = 30; condition = "炎熱 (季節估算)";
-        } else { // Autumn
-            minTemp = 10; maxTemp = 20; condition = "舒適 (季節估算)";
-        }
+      console.warn("Weather parsing failed, using seasonal fallback.");
+      const month = new Date(date).getMonth() + 1;
+
+      // Simple seasonal estimation for Korea (Seoul base)
+      if (month >= 12 || month <= 2) { // Winter
+        minTemp = -8; maxTemp = 2; condition = "寒冷 (季節估算)";
+      } else if (month >= 3 && month <= 5) { // Spring
+        minTemp = 8; maxTemp = 18; condition = "涼爽 (季節估算)";
+      } else if (month >= 6 && month <= 8) { // Summer
+        minTemp = 22; maxTemp = 30; condition = "炎熱 (季節估算)";
+      } else { // Autumn
+        minTemp = 10; maxTemp = 20; condition = "舒適 (季節估算)";
+      }
     }
-    
+
     const avgTemp = (minTemp + maxTemp) / 2;
 
     // Determine Scenario
@@ -103,7 +103,19 @@ export const fetchWeatherWithGemini = async (city: string, date: string): Promis
       });
     }
 
-    return { minTemp, maxTemp, avgTemp, condition, scenario, sources };
+    // Extract Token Usage
+    const usageMetadata = response.usageMetadata;
+    const tokenUsage = usageMetadata ? {
+      totalTokens: usageMetadata.totalTokenCount,
+      promptTokens: usageMetadata.promptTokenCount,
+      candidatesTokens: usageMetadata.candidatesTokenCount,
+    } : undefined;
+
+    if (tokenUsage) {
+      console.log("🪙 Token Usage:", tokenUsage);
+    }
+
+    return { minTemp, maxTemp, avgTemp, condition, scenario, sources, tokenUsage };
 
   } catch (error) {
     console.error("Gemini Weather Fetch Error:", error);
